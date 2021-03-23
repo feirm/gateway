@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/jackcoble/gateway/internal/config"
+	"github.com/feirm/gateway/internal/config"
 )
 
 func main() {
@@ -23,11 +23,12 @@ func main() {
 
 	// WaitGroup
 	var wg sync.WaitGroup
-	wg.Add(len(config.C.Services))
+
+	amountOfServices := len(config.C.Services)
+	wg.Add(amountOfServices)
 
 	// Iterate over all of the services and create handlers
 	for _, service := range config.C.Services {
-		defer wg.Done()
 		log.Printf("Creating handler for %s microservice.\n", service.Name)
 
 		targetUrl, err := url.Parse(service.URL)
@@ -36,6 +37,8 @@ func main() {
 		}
 
 		go http.Handle(service.Path, http.StripPrefix(service.Path, httputil.NewSingleHostReverseProxy(targetUrl)))
+
+		defer wg.Done()
 	}
 
 	log.Printf("Starting gateway on: %s:%d", config.C.HTTP.Bind, config.C.HTTP.Port)

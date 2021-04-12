@@ -1,7 +1,11 @@
-# Gateway
+<h1 align="center">Feirm Gateway</h1>
+<p align="center">⛩️ API Gateway for Feirm Microservices.</p>
 
-This repository contains the source for the Feirm Microservice Gateway. It is built using the standard library, so there is no need for complex setup. Modify the configuration file as needed and launch the program using the following:
+<p align="center">
+    <img src="https://img.shields.io/github/go-mod/go-version/feirm/gateway?style=for-the-badge" alt="Go Version" />
+    <img src="https://goreportcard.com/badge/github.com/feirm/gateway?style=for-the-badge" alt="Go Report Card"/>
+</p>
 
-```bash
-$ go run cmd/gateway/main.go
-```
+The Feirm Gateway essentially acts as a router to our microservices. It is configured through a JSON configuration file and also enforces rate limiting to prevent services from being abused.
+
+You can find this gateway being used in production for Feirm at [https://api.feirm.com](https://api.feirm.com)

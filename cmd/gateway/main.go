@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 
+	"github.com/didip/tollbooth"
+	"github.com/didip/tollbooth/limiter"
 	"github.com/feirm/gateway/internal/config"
 )
 
@@ -20,6 +23,20 @@ func main() {
 		return
 	}
 
+	// Create a new mux instance
+	r := http.NewServeMux()
+
+	// Create a rate limiter to limit by IP address
+	// Limited to 10 requests per second
+	lmt := tollbooth.NewLimiter(10, &limiter.ExpirableOptions{
+		DefaultExpirationTTL: time.Hour,
+	})
+
+	lmt.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
+	lmt.SetMethods([]string{"POST"})
+	lmt.SetHeaderEntryExpirationTTL(time.Hour)
+	lmt.SetMessage("You are being rate limited!")
+
 	// Iterate over all of the services and create handlers
 	for _, service := range config.C.Services {
 		log.Printf("Creating handler for %s microservice.\n", service.Name)
@@ -29,11 +46,17 @@ func main() {
 			log.Fatalln("Error creating handler:", err.Error())
 		}
 
-		http.Handle(service.Path, http.StripPrefix(service.Path, httputil.NewSingleHostReverseProxy(targetUrl)))
+		r.Handle(service.Path, tollbooth.LimitHandler(lmt, http.StripPrefix(service.Path, httputil.NewSingleHostReverseProxy(targetUrl))))
 	}
 
+	// Configure the HTTP server
 	log.Printf("Starting gateway on: %s:%d", config.C.HTTP.Bind, config.C.HTTP.Port)
-	if err := http.ListenAndServe(":"+fmt.Sprintf("%d", config.C.HTTP.Port), nil); err != nil {
+	srv := &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", config.C.HTTP.Bind, config.C.HTTP.Port),
+		Handler: r,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalln("Error starting HTTP server:", err.Error())
 	}
 }

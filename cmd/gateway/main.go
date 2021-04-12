@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync"
 
 	"github.com/feirm/gateway/internal/config"
 )
@@ -21,12 +20,6 @@ func main() {
 		return
 	}
 
-	// WaitGroup
-	var wg sync.WaitGroup
-
-	amountOfServices := len(config.C.Services)
-	wg.Add(amountOfServices)
-
 	// Iterate over all of the services and create handlers
 	for _, service := range config.C.Services {
 		log.Printf("Creating handler for %s microservice.\n", service.Name)
@@ -36,9 +29,7 @@ func main() {
 			log.Fatalln("Error creating handler:", err.Error())
 		}
 
-		go http.Handle(service.Path, http.StripPrefix(service.Path, httputil.NewSingleHostReverseProxy(targetUrl)))
-
-		defer wg.Done()
+		http.Handle(service.Path, http.StripPrefix(service.Path, httputil.NewSingleHostReverseProxy(targetUrl)))
 	}
 
 	log.Printf("Starting gateway on: %s:%d", config.C.HTTP.Bind, config.C.HTTP.Port)

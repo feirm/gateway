@@ -11,6 +11,8 @@ import (
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/feirm/gateway/internal/config"
+
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -49,11 +51,20 @@ func main() {
 		r.Handle(service.Path, tollbooth.LimitHandler(lmt, http.StripPrefix(service.Path, httputil.NewSingleHostReverseProxy(targetUrl))))
 	}
 
+	// CORS
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:8080", "https://feirm.com"},
+		AllowedHeaders: []string{"Authorization", "Content-Type"},
+		AllowedMethods: []string{"GET", "POST"},
+	})
+
+	handler := c.Handler(r)
+
 	// Configure the HTTP server
 	log.Printf("Starting gateway on: %s:%d", config.C.HTTP.Bind, config.C.HTTP.Port)
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", config.C.HTTP.Bind, config.C.HTTP.Port),
-		Handler: r,
+		Handler: handler,
 	}
 
 	if err := srv.ListenAndServe(); err != nil {

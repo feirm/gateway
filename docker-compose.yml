@@ -1,0 +1,10 @@
+version: '3.5'
+
+services:
+  gateway:
+    build:
+      context: .
+    network_mode: "host"
+    volumes:
+        - "./config.json:/app/config.json"
+    restart: "always"

@@ -53,7 +53,7 @@ func main() {
 
 	// CORS
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:8080", "https://feirm.com"},
+		AllowedOrigins: []string{"*"},
 		AllowedHeaders: []string{"Authorization", "Content-Type"},
 		AllowedMethods: []string{"GET", "POST"},
 	})
